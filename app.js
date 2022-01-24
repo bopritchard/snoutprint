@@ -5,24 +5,10 @@ const knex = require('knex')({
   connection: {
     host: 'localhost',
     port: 5432,
-    user: 'postgres',
-    password: 'snoutprint',
+    user: '',
+    password: '',
     database: 'snoutprint-db'
   }
-});
-
-app.get('/example', async function (req, res) {
-  // this query returns [ { id: 1, description: 'Hello' }, { id: 2, description: 'World' }]
-  const results = await knex.raw(`SELECT id, description FROM example ORDER BY created_at`);
-  
-  res.json(results);
-});
-
-app.get('/example/:id', async function (req, res) {
-  // this query returns [ { id: 1, description: 'Hello' } ]
-  const results = await knex.raw(`SELECT id, description FROM example WHERE id = ?`, [ req.params.id ]);
-  
-  res.json(results[0]);
 });
 
 /**
@@ -30,18 +16,32 @@ app.get('/example/:id', async function (req, res) {
  */
 
 // Gets a person's profile
- app.get('/person/:person_id', function (req, res) {
-  res.status(200).send();
-});
+ app.get('/person/:person_id', async function (req, res) {
+     const results = await knex.raw(`SELECT id, first_name, last_name, email_address 
+                                     FROM persons 
+                                     WHERE id = ? and deleted_at is null`, [req.params.person_id]);
+     res.json(results['rows'][0]);
+   });
 
 // Lists all of the person's pets (a flat list of pet objects; do not return soft-deleted data)
-app.get('/person/:person_id/pets', function (req, res) {
-  res.status(200).send();
+app.get('/person/:person_id/pets', async function (req, res) {
+  const results = await knex.raw(`SELECT pets.id, pets.name, pets.species, pets.breed, pets.sex, pets.birthdate 
+                                  FROM persons p
+                                  INNER JOIN pet_persons pp on pp.person_id = p.id
+                                  INNER JOIN pets on pets.id = pp.pet_id and pets.deleted_at is null
+                                  WHERE p.id = ? and p.deleted_at is null`, [ req.params.person_id ]);
+  res.json(results['rows']);
 });
 
 // Lists all of the person's pets' records (a flat list of record objects; do not return soft-deleted data)
-app.get('/person/:person_id/records', function (req, res) {
-  res.status(200).send();
+app.get('/person/:person_id/records', async function (req, res) {
+  const results =  await knex.raw(`SELECT r.id, r.title, r.url
+                                  FROM persons p
+                                  INNER JOIN pet_persons pp on pp.person_id = p.id
+                                  INNER JOIN pets on pets.id = pp.pet_id and pets.deleted_at is null
+                                  INNER JOIN records r on r.pet_id = pets.id and r.deleted_at is null
+                                  WHERE p.id = ? and p.deleted_at is null `, [ req.params.person_id ]);
+  res.json(results['rows']);
 });
 
 /**

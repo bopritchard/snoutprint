@@ -1,2 +1,14 @@
 -- This is for part 4:
 -- Optimize loading a person's list of pets
+
+-- 1. Unnecessary data (remove fields in the API response that might not be necessary)
+-- 2. A little normalization
+--      a. create a species table
+--      b. create a breeds table
+--      c. create a sex table
+-- 3. Indexing
+--      a. pets.person_id
+--      b. indexes for all join fields
+-- 4. Utilize indexes by changing mathematical operators like 'person.id = 1' to an IN predicate 'person.id IN (1)
+-- 5. Other mitigation
+--      a. In the event that slowness is caused a large number of pets by an owner, we could do some pagination with the introduction of (limit, offset)
